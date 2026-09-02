@@ -34,9 +34,12 @@ CREATE TABLE small_categories (
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    
-    -- Ensure unique name within a big_category
-    CONSTRAINT unique_small_category_per_big UNIQUE (big_category_id, name)
+
+    CONSTRAINT unique_small_category_per_big
+        UNIQUE (big_category_id, name),
+
+    CONSTRAINT unique_small_category_id_big_category
+        UNIQUE (id, big_category_id)
 );
 
 -- Index for querying by big category
