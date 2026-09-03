@@ -278,7 +278,7 @@ export const useTimerStore = create<TimerStoreState>((set, get) => ({
       const elapsedSeconds = calculateElapsedSeconds(
         activeTimer.accumulated_active_seconds,
         activeTimer.last_session_start,
-        activeTimer.status
+        activeTimer.status as 'RUNNING' | 'PAUSED'
       )
 
       const now = new Date().toISOString()
@@ -421,7 +421,7 @@ export function getCurrentTimerState(activeTimer: ActiveTimer | null): TimerStat
   const elapsedSeconds = calculateElapsedSeconds(
     activeTimer.accumulated_active_seconds,
     activeTimer.last_session_start,
-    activeTimer.status
+    activeTimer.status as 'RUNNING' | 'PAUSED'
   )
   
   let remainingSeconds: number | null = null
@@ -430,7 +430,7 @@ export function getCurrentTimerState(activeTimer: ActiveTimer | null): TimerStat
       activeTimer.countdown_target_seconds,
       activeTimer.accumulated_active_seconds,
       activeTimer.last_session_start,
-      activeTimer.status
+      activeTimer.status as 'RUNNING' | 'PAUSED'
     )
   }
   
