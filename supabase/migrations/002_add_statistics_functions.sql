@@ -60,35 +60,27 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 CREATE OR REPLACE FUNCTION get_today_statistics(user_timezone text DEFAULT 'UTC')
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name text,
+    big_category_name varchar,
     small_category_id uuid,
-    small_category_name text,
+    small_category_name varchar,
     total_seconds bigint,
     formatted_duration text
 ) AS $$
 BEGIN
     RETURN QUERY
-    WITH today_records AS (
-        SELECT 
-            tr.big_category_id,
-            tr.small_category_id,
-            tr.actual_duration_seconds as actual_duration
-        FROM time_records tr
-        WHERE 
-            -- Convert UTC start_time to user's timezone and check if it's today
-            DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE user_timezone) = 
-            CURRENT_DATE AT TIME ZONE user_timezone
-    )
     SELECT 
         bc.id AS big_category_id,
-        bc.name AS big_category_name,
+        bc.name::varchar AS big_category_name,
         sc.id AS small_category_id,
-        sc.name AS small_category_name,
-        COALESCE(SUM(tr.actual_duration), 0)::bigint AS total_seconds,
-        format_duration(COALESCE(SUM(tr.actual_duration), 0)) AS formatted_duration
-    FROM today_records tr
-    RIGHT JOIN big_categories bc ON tr.big_category_id = bc.id
-    LEFT JOIN small_categories sc ON tr.small_category_id = sc.id AND tr.big_category_id = sc.big_category_id
+        sc.name::varchar AS small_category_name,
+        SUM(tr.actual_duration_seconds)::bigint AS total_seconds,
+        format_duration(SUM(tr.actual_duration_seconds)) AS formatted_duration
+    FROM time_records tr
+    JOIN big_categories bc ON tr.big_category_id = bc.id
+    LEFT JOIN small_categories sc ON tr.small_category_id = sc.id
+    WHERE 
+        DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE user_timezone) = 
+        (CURRENT_DATE AT TIME ZONE user_timezone)::date
     GROUP BY bc.id, bc.name, sc.id, sc.name
     ORDER BY total_seconds DESC;
 END;
@@ -102,9 +94,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_all_time_statistics()
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name text,
+    big_category_name varchar,
     small_category_id uuid,
-    small_category_name text,
+    small_category_name varchar,
     total_seconds bigint,
     formatted_duration text,
     percentage numeric
@@ -119,9 +111,9 @@ BEGIN
     RETURN QUERY
     SELECT 
         bc.id AS big_category_id,
-        bc.name AS big_category_name,
+        bc.name::varchar AS big_category_name,
         sc.id AS small_category_id,
-        sc.name AS small_category_name,
+        sc.name::varchar AS small_category_name,
         COALESCE(SUM(tr.actual_duration_seconds), 0)::bigint AS total_seconds,
         format_duration(COALESCE(SUM(tr.actual_duration_seconds), 0)) AS formatted_duration,
         CASE 
@@ -129,8 +121,8 @@ BEGIN
             ELSE ROUND((COALESCE(SUM(tr.actual_duration_seconds), 0)::numeric / total_time::numeric * 100), 2)
         END AS percentage
     FROM time_records tr
-    RIGHT JOIN big_categories bc ON tr.big_category_id = bc.id
-    LEFT JOIN small_categories sc ON tr.small_category_id = sc.id AND tr.big_category_id = sc.big_category_id
+    JOIN big_categories bc ON tr.big_category_id = bc.id
+    LEFT JOIN small_categories sc ON tr.small_category_id = sc.id
     GROUP BY bc.id, bc.name, sc.id, sc.name, total_time
     ORDER BY total_seconds DESC;
 END;
@@ -222,7 +214,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_available_time_summary()
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name text,
+    big_category_name varchar,
     earned_seconds bigint,
     consumed_seconds bigint,
     available_seconds bigint,
@@ -234,7 +226,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         bc.id AS big_category_id,
-        bc.name AS big_category_name,
+        bc.name::varchar AS big_category_name,
         COALESCE(stats.earned_seconds, 0)::bigint AS earned_seconds,
         COALESCE(stats.consumed_seconds, 0)::bigint AS consumed_seconds,
         COALESCE(stats.available_seconds, 0)::bigint AS available_seconds,
