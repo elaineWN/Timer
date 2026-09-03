@@ -1,4 +1,8 @@
 ```
-# Database migrations
-supabase/migrations/*.sql
+# Dependencies
+node_modules/
+
+# Vite temporary files
+node_modules/.vite/deps_temp_*/
+node_modules/.vite/vitest/results.json
 ```
