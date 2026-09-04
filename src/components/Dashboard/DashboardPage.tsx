@@ -17,8 +17,9 @@ interface AllTimeStat {
 }
 
 interface TrendData {
-  date: string
+  date_value: string
   total_seconds: number
+  formatted_duration?: string
 }
 
 interface AvailableTimeData {
@@ -252,7 +253,7 @@ export function DashboardPage() {
                         title={formatDuration(day.total_seconds)}
                       />
                       <div className="text-xs text-gray-500 mt-1">
-                        {day.date.slice(5)}
+                        {day.date_value.slice(5)}
                       </div>
                     </div>
                   )
@@ -272,7 +273,7 @@ export function DashboardPage() {
                       <div
                         className="w-full bg-green-200 rounded-t"
                         style={{ height: `${Math.max(height, 2)}%` }}
-                        title={`${day.date}: ${formatDuration(day.total_seconds)}`}
+                        title={`${day.date_value}: ${formatDuration(day.total_seconds)}`}
                       />
                     </div>
                   )
