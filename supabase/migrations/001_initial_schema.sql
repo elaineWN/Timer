@@ -317,8 +317,13 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 -- More efficient version using a view-like approach
+-- Returns a table with earned, consumed, and available seconds
 CREATE OR REPLACE FUNCTION calculate_available_time_fast(p_target_category_id UUID)
-RETURNS INTEGER AS $$
+RETURNS TABLE (
+    earned_seconds INTEGER,
+    consumed_seconds INTEGER,
+    available_seconds INTEGER
+) AS $$
 DECLARE
     v_earned_seconds INTEGER := 0;
     v_consumed_seconds INTEGER := 0;
@@ -339,7 +344,9 @@ BEGIN
     WHERE cr.target_big_category_id = p_target_category_id
       AND tr.conversion_rule_id IS NOT NULL;
     
-    RETURN v_earned_seconds - v_consumed_seconds;
+    earned_seconds := v_earned_seconds;
+    consumed_seconds := v_consumed_seconds;
+    available_seconds := v_earned_seconds - v_consumed_seconds;
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -352,8 +359,11 @@ CREATE VIEW available_time_view AS
 SELECT 
     bc.id as big_category_id,
     bc.name as big_category_name,
-    calculate_available_time_fast(bc.id) as available_seconds
+    (calc.earned_seconds)::INTEGER as earned_seconds,
+    (calc.consumed_seconds)::INTEGER as consumed_seconds,
+    (calc.available_seconds)::INTEGER as available_seconds
 FROM big_categories bc
+CROSS JOIN LATERAL calculate_available_time_fast(bc.id) calc
 WHERE bc.status = 'ACTIVE'
   AND EXISTS (
       SELECT 1 FROM conversion_rules cr 
@@ -391,6 +401,7 @@ RETURNS BOOLEAN AS $$
 DECLARE
     v_available_seconds INTEGER;
     v_has_conversion_rule BOOLEAN;
+    v_result RECORD;
 BEGIN
     -- Check if this category is controlled by a conversion rule
     SELECT EXISTS(
@@ -400,7 +411,9 @@ BEGIN
     
     -- If category is controlled by conversion rule, check available time
     IF v_has_conversion_rule THEN
-        v_available_seconds := calculate_available_time_fast(p_big_category_id);
+        SELECT available_seconds INTO v_result
+        FROM calculate_available_time_fast(p_big_category_id);
+        v_available_seconds := v_result.available_seconds;
         
         -- Both COUNT_UP and COUNTDOWN require available_time > 0 to START
         IF v_available_seconds <= 0 THEN
@@ -461,5 +474,5 @@ COMMENT ON COLUMN active_timer.countdown_target_seconds IS 'Target duration for 
 COMMENT ON COLUMN active_timer.total_paused_duration_seconds IS 'Accumulated paused time during this timer session';
 COMMENT ON COLUMN active_timer.accumulated_active_seconds IS 'Active time accumulated before the current session';
 COMMENT ON COLUMN active_timer.last_session_start IS 'Start time of current running session, NULL if paused';
-COMMENT ON FUNCTION calculate_available_time_fast IS 'Calculates available time for a category: earned - consumed. Uses stored conversion_rule_id for historical accuracy.';
+COMMENT ON FUNCTION calculate_available_time_fast(UUID) IS 'Returns TABLE(earned_seconds, consumed_seconds, available_seconds). Calculates available time for a category: earned - consumed. Uses stored conversion_rule_id for historical accuracy.';
 COMMENT ON FUNCTION validate_timer_start IS 'Validates if a timer can start. Checks available_time > 0 for controlled categories.';
