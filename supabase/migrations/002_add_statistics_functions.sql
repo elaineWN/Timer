@@ -70,9 +70,9 @@ BEGIN
     RETURN QUERY
     SELECT 
         bc.id AS big_category_id,
-        bc.name::varchar AS big_category_name,
+        bc.name AS big_category_name,
         sc.id AS small_category_id,
-        sc.name::varchar AS small_category_name,
+        sc.name AS small_category_name,
         SUM(tr.actual_duration_seconds)::bigint AS total_seconds,
         format_duration(SUM(tr.actual_duration_seconds)) AS formatted_duration
     FROM time_records tr
@@ -111,9 +111,9 @@ BEGIN
     RETURN QUERY
     SELECT 
         bc.id AS big_category_id,
-        bc.name::varchar AS big_category_name,
+        bc.name AS big_category_name,
         sc.id AS small_category_id,
-        sc.name::varchar AS small_category_name,
+        sc.name AS small_category_name,
         COALESCE(SUM(tr.actual_duration_seconds), 0)::bigint AS total_seconds,
         format_duration(COALESCE(SUM(tr.actual_duration_seconds), 0)) AS formatted_duration,
         CASE 
@@ -226,7 +226,7 @@ BEGIN
     RETURN QUERY
     SELECT 
         bc.id AS big_category_id,
-        bc.name::varchar AS big_category_name,
+        bc.name AS big_category_name,
         COALESCE(stats.earned_seconds, 0)::bigint AS earned_seconds,
         COALESCE(stats.consumed_seconds, 0)::bigint AS consumed_seconds,
         COALESCE(stats.available_seconds, 0)::bigint AS available_seconds,
