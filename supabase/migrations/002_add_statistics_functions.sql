@@ -134,7 +134,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Parameter: days_count (e.g., 7, 30)
 -- Parameter: user_timezone
 -- ============================================================
-CREATE OR REPLACE FUNCTION get_daily_trend(days_count integer DEFAULT 7, user_timezone text DEFAULT 'UTC')
+CREATE OR REPLACE FUNCTION get_daily_trend(p_days integer DEFAULT 7, p_timezone text DEFAULT 'UTC')
 RETURNS TABLE (
     date_value date,
     total_seconds bigint,
@@ -144,18 +144,18 @@ BEGIN
     RETURN QUERY
     WITH date_range AS (
         SELECT generate_series(
-            CURRENT_DATE - (days_count - 1),
+            CURRENT_DATE - (p_days - 1),
             CURRENT_DATE,
             '1 day'::interval
         )::date AS series_date
     ),
     daily_totals AS (
         SELECT 
-            DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE user_timezone) AS record_date,
+            DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE p_timezone) AS record_date,
             SUM(tr.actual_duration_seconds) AS day_total
         FROM time_records tr
-        WHERE tr.start_time >= (CURRENT_DATE - (days_count - 1)) AT TIME ZONE user_timezone AT TIME ZONE 'UTC'
-        GROUP BY DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE user_timezone)
+        WHERE tr.start_time >= (CURRENT_DATE - (p_days - 1)) AT TIME ZONE p_timezone AT TIME ZONE 'UTC'
+        GROUP BY DATE(tr.start_time AT TIME ZONE 'UTC' AT TIME ZONE p_timezone)
     )
     SELECT 
         dr.series_date AS date_value,
