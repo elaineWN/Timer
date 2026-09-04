@@ -60,9 +60,9 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 CREATE OR REPLACE FUNCTION get_today_statistics(user_timezone text DEFAULT 'UTC')
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name varchar,
+    big_category_name text,
     small_category_id uuid,
-    small_category_name varchar,
+    small_category_name text,
     total_seconds bigint,
     formatted_duration text
 ) AS $$
@@ -94,9 +94,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_all_time_statistics()
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name varchar,
+    big_category_name text,
     small_category_id uuid,
-    small_category_name varchar,
+    small_category_name text,
     total_seconds bigint,
     formatted_duration text,
     percentage numeric
@@ -214,7 +214,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_available_time_summary()
 RETURNS TABLE (
     big_category_id uuid,
-    big_category_name varchar,
+    big_category_name text,
     earned_seconds bigint,
     consumed_seconds bigint,
     available_seconds bigint,
